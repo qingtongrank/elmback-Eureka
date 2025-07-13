@@ -1,0 +1,46 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: jdbc:mysql://mysql-order:13313/elm_order?useSSL=false&serverTimezone=UTC
+    username: root
+    password: 20221900066
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  cloud:
+    config:
+      uri: http://config-server:8888
+      fail-fast: true
+      retry:
+        initial-interval: 1000
+        multiplier: 1.5
+        max-attempts: 6
+  data:
+    redis:
+      host: redis
+      port: 6379
+      password: 20221900066
+      timeout: 5000
+
+sql-script-locations: classpath:/db/elm_order.sql
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      orderCircuitBreaker:
+        slidingWindowSize: 10
+        slidingWindowType: COUNT_BASED
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
