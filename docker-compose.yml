@@ -1,0 +1,311 @@
+version: '3.8'
+
+services:
+  # 公共MySQL配置
+  mysql-base: &mysql-base
+    image: mysql:8.0
+    environment: &mysql-env
+      MYSQL_ROOT_PASSWORD: 20221900066
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 20s
+      interval: 5s
+      retries: 10
+
+  mysql-admin:
+    <<: *mysql-base
+    environment:
+      <<: *mysql-env
+      MYSQL_DATABASE: elm_admin
+    ports:
+      - "13307:3306"
+    volumes:
+      - mysql_admin_data:/var/lib/mysql
+    networks:
+      - elm-network
+
+  mysql-user:
+    <<: *mysql-base
+    environment:
+      <<: *mysql-env
+      MYSQL_DATABASE: elm_user
+    ports:
+      - "13308:3306"
+    volumes:
+      - mysql_user_data:/var/lib/mysql
+    networks:
+      - elm-network
+
+  mysql-deliverydriver:
+    <<: *mysql-base
+    environment:
+      <<: *mysql-env
+      MYSQL_DATABASE: elm_deliverydriver
+    ports:
+      - "13309:3306"
+    volumes:
+      - mysql_deliverydriver_data:/var/lib/mysql
+    networks:
+      - elm-network
+
+  mysql-cart:
+    <<: *mysql-base
+    environment:
+      <<: *mysql-env
+      MYSQL_DATABASE: elm_cart
+    ports:
+      - "13310:3306"
+    volumes:
+      - mysql_cart_data:/var/lib/mysql
+    networks:
+      - elm-network
+
+  mysql-deliveryaddress:
+    <<: *mysql-base
+    environment:
+      <<: *mysql-env
+      MYSQL_DATABASE: elm_deliveryaddress
+    ports:
+      - "13311:3306"
+    volumes:
+      - mysql_deliveryaddress_data:/var/lib/mysql
+    networks:
+      - elm-network
+
+  mysql-food:
+    <<: *mysql-base
+    environment:
+      <<: *mysql-env
+      MYSQL_DATABASE: elm_food
+    ports:
+      - "13312:3306"
+    volumes:
+      - mysql_food_data:/var/lib/mysql
+    networks:
+      - elm-network
+
+  mysql-order:
+    <<: *mysql-base
+    environment:
+      <<: *mysql-env
+      MYSQL_DATABASE: elm_order
+    ports:
+      - "13313:3306"
+    volumes:
+      - mysql_order_data:/var/lib/mysql
+    networks:
+      - elm-network
+
+  mysql-orderdetailet:
+    <<: *mysql-base
+    environment:
+      <<: *mysql-env
+      MYSQL_DATABASE: elm_orderdetailet
+    ports:
+      - "13314:3306"
+    volumes:
+      - mysql_orderdetailet_data:/var/lib/mysql
+    networks:
+      - elm-network
+
+  mysql-business:
+    <<: *mysql-base
+    environment:
+      <<: *mysql-env
+      MYSQL_DATABASE: elm_business
+    ports:
+      - "13315:3306"
+    volumes:
+      - mysql_business_data:/var/lib/mysql
+    networks:
+      - elm-network
+
+  eureka-server:
+    build:
+      context: ./eurekaServer
+    ports:
+      - "8761:8761"
+    networks:
+      - elm-network
+
+  config-server:
+    build:
+      context: ./springCloudConfig
+    ports:
+      - "8888:8888"
+    depends_on:
+      - eureka-server
+    networks:
+      - elm-network
+
+  gateway:
+    build:
+      context: ./springCloudGateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - config-server
+    networks:
+      - elm-network
+
+  admin-service:
+    build:
+      context: ./adminService
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-admin:3306/elm_admin
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 20221900066
+    ports:
+      - "8083:8083"
+    depends_on:
+      mysql-admin:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - elm-network
+
+  user-service:
+    build:
+      context: ./userService
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-user:3306/elm_user
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 20221900066
+    depends_on:
+      mysql-user:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - elm-network
+
+  deliverydriver-service:
+    build:
+      context: ./deliveryDriverService
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-deliverydriver:3306/elm_deliverydriver
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 20221900066
+    depends_on:
+      mysql-deliverydriver:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - elm-network
+
+  cart-service:
+    build:
+      context: ./cartService
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-cart:3306/elm_cart
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 20221900066
+    depends_on:
+      mysql-cart:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - elm-network
+
+  deliveryaddress-service:
+    build:
+      context: ./deliveryAddressService
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-deliveryaddress:3306/elm_deliveryaddress
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 20221900066
+    depends_on:
+      mysql-deliveryaddress:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - elm-network
+
+  food-service:
+    build:
+      context: ./foodService
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-food:3306/elm_food
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 20221900066
+    depends_on:
+      mysql-food:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - elm-network
+
+  order-service:
+    build:
+      context: ./orderService
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-order:3306/elm_order
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 20221900066
+    depends_on:
+      mysql-order:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - elm-network
+
+  orderdetailet-service:
+    build:
+      context: ./orderDetailetService
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-orderdetailet:3306/elm_orderdetailet
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 20221900066
+    depends_on:
+      mysql-orderdetailet:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - elm-network
+
+  business-service:
+    build:
+      context: ./businessService
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-business:3306/elm_business
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 20221900066
+    depends_on:
+      mysql-business:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    networks:
+      - elm-network
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass 20221900066
+    volumes:
+      - redis_data:/data
+    networks:
+      - elm-network
+
+volumes:
+  redis_data:
+  mysql_admin_data:
+  mysql_user_data:
+  mysql_deliverydriver_data:
+  mysql_cart_data:
+  mysql_deliveryaddress_data:
+  mysql_food_data:
+  mysql_order_data:
+  mysql_orderdetailet_data:
+  mysql_business_data:
+
+networks:
+  elm-network:

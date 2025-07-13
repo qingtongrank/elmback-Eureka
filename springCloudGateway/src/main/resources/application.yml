@@ -1,0 +1,102 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+              - "http://localhost:5174"
+              - "http://localhost:5175"
+              - "http://localhost:5176"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            # 添加去重过滤器（核心解决方案）
+            exposedHeaders:
+              - Access-Control-Allow-Origin
+              - Access-Control-Allow-Credentials
+
+      # 添加响应头去重过滤器
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+      routes:
+        - id: user-service
+          uri: lb://user-service  # 使用服务名进行负载均衡调用
+          predicates:
+            - Path=/UserController/**         # 匹配路径
+
+        - id: business-service
+          uri: lb://business-service
+          predicates:
+            - Path=/BusinessController/**
+
+        - id: admin-service
+          uri: lb://admin-service
+          predicates:
+            - Path=/AdminController/**
+
+        - id: deliveryDriver-service
+          uri: lb://deliverydriver-service
+          predicates:
+            - Path=/DeliveryDriverController/**
+
+        - id: cart-service
+          uri: lb://cart-service
+          predicates:
+            - Path=/CartController/**
+
+        - id: deliveryAddress-service
+          uri: lb://deliveryaddress-service
+          predicates:
+            - Path=/DeliveryAddressController/**
+
+        - id: food-service
+          uri: lb://food-service
+          predicates:
+            - Path=/FoodController/**
+
+        - id: orderDetailet-service
+          uri: lb://orderdetailet-service
+          predicates:
+            - Path=/OrderDetailetController/**
+
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/OrderController/**
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG
+
+jwt:
+  secret: "w-y-s-32-byte-secret-key-12345678"
+  expiration: 3600
+  header: Authorization
+  prefix: "Bearer "
